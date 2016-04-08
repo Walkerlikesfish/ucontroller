@@ -1,0 +1,56 @@
+; Micro Controller design exercises
+; Interfacing the 4x4 keyboard 
+;
+;keyboard format: 0 1 2 3
+;                 4 5 6 7
+;                 8 9 A B
+;                 C D E F
+;*************************************************
+
+; Main program
+
+org 00h
+ljmp main
+
+org 30h
+
+; P0.0-P0.3 Rows OUTPUT   P1
+; P0.4-P0.7 Cols INPUT    P2
+
+		mov	P2 #0FFH 		; make P2 an input port [?]
+K1: 	mov P1 #0
+		mov A,P2			;read all cols. ensure all keys are open
+		anl A,#00001111B 	;mask unused bits
+		cjne A,#00001111B,K1;check until all keys released
+K2:		acall DELAY			; call delay sub to wait 20ms for debounce
+		mov A,P2
+		anl A,#00001111B
+		cjne A,#00001111B,OVER ;key indeed pressed
+		SJMP K2				; go on checking
+OVER:	acall DELAY
+		mov A,P2
+		anl A,#00001111B
+		cjne A,#00001111B,OVER1 ; key pressed go find the Row
+		sjmp K2				; just a bounce, go back K2
+OVER1:  mov	P1,#11111110B 	; gnd row0
+		mov A,P2
+		anl A,#00001111B
+		cjne A,#00001111B,ROW0 ; key in row0, find col
+		mov	P1,#11111101B 	; gnd row1
+		mov A,P2
+		anl A,#00001111B
+		cjne A,#00001111B,ROW1 ; key in row0, find col
+		mov	P1,#11111011B 	; gnd row2
+		mov A,P2
+		anl A,#00001111B
+		cjne A,#00001111B,ROW2 ; key in row0, find col
+		mov	P1,#11110111B 	; gnd row3
+		mov A,P2
+		anl A,#00001111B
+		cjne A,#00001111B,ROW3 ; key in row0, find col
+		LJMP K2				; false input bad luck
+
+ROW0:	mov
+ROW1:
+ROW2:
+ROW3: 
