@@ -1,0 +1,100 @@
+;Hao QIN & Yu LIU
+; Ex7 keypad
+
+$include(t89c51cc01.inc)
+	
+DSEG AT 50h
+	keymem1: DS 1
+		
+;--------------------------------------------------------
+ 
+CSEG
+;--------------------------------------------------------
+;Boot Code
+org 0000h
+ljmp main
+;---------------------------------------------------------
+;main
+;---------------------------------------------------------
+MAIN:  ;acall KEYINT
+	   ;acall SHOW
+	   mov C, P2.6
+	   mov P2.4, C
+	   
+	   LJMP main
+
+;---------------------------------------------------------
+;functions
+;---------------------------------------------------------
+
+;----------------------------------------------------------------------------------
+; keyint
+;   interacting with 4x4 keypad
+KEYINT: ;P0.0 - P0.3 INPUT
+		;P0.4 - P0.7 OUTPUT
+		mov P0,#00001111b ; setting the input output pins
+
+K1:		mov P0,#00000000b ; set 0 to all outputs ports
+		mov R2,P0 
+		anl R2,#11110000b ; mask to read all the inputs
+		acall delay
+		mov R3,P0;
+		anl R3,#11110000b ;
+		cjne R3,R2,K1     ; debouncing, check if two times different jump back
+		mov P0,#01111111b ; check 1st row
+		mov R2,P0;
+		anl R2,#00001111b ; mask to get the inputs
+		cjne R2,#00001111b,ROW1
+		
+		mov P0,#00001011b ; check 2st row
+		mov R2,P0;
+		anl R2,#11110000b ; mask to get the inputs
+		cjne R2,#11110000b,ROW2
+		mov P0,#00001101b ; check 1st row
+		mov R2,P0;
+		anl R2,#11110000b ; mask to get the inputs
+		cjne R2,#11110000b,ROW3
+		mov P0,#00001110b ; check 1st row
+		mov R2,P0;
+		anl R2,#11110000b ; mask to get the inputs
+		cjne R2,#11110000b,ROW4
+		ljmp K1           ; false pressing jump back to debouncing
+ROW1:   mov keymem1, #10H  ; mark XXh the first X as rows
+		mov A,R2		   ; move to accumulator
+		RR A,#04H		   ; right shift 4 bits
+		add A,keymem1      ; assemble the code
+		; #0001 0111 -> (1,1) #0001 1011 -> (1,2)
+ROW2:	mov keymem1, #20H
+		mov A,R2		   ; move to accumulator
+		RR A,#04H		   ; right shift 4 bits
+		add A,keymem1      ; assemble the code
+		; #0010 0111 -> (2,1) #0010 1011 -> (2,2)
+ROW3:	mov keymem1, #30H
+		mov A,R2		   ; move to accumulator
+		RR A,#04H		   ; right shift 4 bits
+		add A,keymem1      ; assemble the code
+		; #0011 0111 -> (3,1) #0011 1011 -> (3,2)
+ROW4:	mov keymem1, #40H
+		mov A,R2		   ; move to accumulator
+		RR A,#04H		   ; right shift 4 bits
+		add A,keymem1      ; assemble the code
+		; #0100 0111 -> (4,1) #0100 1011 -> (4,2)
+
+		RET
+
+;----------------------------------------------------------------------------------
+
+; DELAY
+;  delay 1ms
+DELAY:   MOV R6,#250D
+         MOV R7,#250D
+LABEL1:  DJNZ R6,LABEL1
+LABEL2:  DJNZ R7,LABEL2
+         RET
+
+;----------------------------------------------------------------------------------
+; SHOW
+;   show the effect of interacting with Keypad
+
+	
+END
